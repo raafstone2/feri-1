@@ -7,6 +7,10 @@ on:
   workflow_dispatch:
 
 
+permissions:
+  contents: write
+
+
 jobs:
 
   check-messages:
@@ -39,3 +43,12 @@ jobs:
 
         run: |
           python checker.py
+
+
+      - name: Save message history
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add last_messages.json
+          git commit -m "Update message history" || echo "No changes"
+          git push
