@@ -1,33 +1,38 @@
 name: Free1 Telegram Notifier
 
+
 on:
+
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/45 * * * *"
 
   workflow_dispatch:
 
-
-permissions:
-  contents: write
 
 
 jobs:
 
   check-messages:
 
+
     runs-on: ubuntu-latest
 
 
+
     steps:
+
 
       - name: Checkout repository
         uses: actions/checkout@v4
 
 
+
       - name: Setup Python
         uses: actions/setup-python@v5
+
         with:
           python-version: "3.x"
+
 
 
       - name: Install packages
@@ -35,20 +40,18 @@ jobs:
           pip install requests beautifulsoup4
 
 
+
       - name: Run checker
+
         env:
+
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
+
           GMAIL_TO: ${{ secrets.GMAIL_TO }}
+
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
 
+
         run: |
+
           python checker.py
-
-
-      - name: Save message history
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add last_messages.json
-          git commit -m "Update message history" || echo "No changes"
-          git push
