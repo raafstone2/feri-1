@@ -41,7 +41,9 @@ def get_messages():
         class_="tgme_widget_message"
     )
 
+
     result = []
+
 
     for item in messages:
 
@@ -59,6 +61,7 @@ def get_messages():
 
             if message:
                 result.append(message)
+
 
     return result[-20:]
 
