@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import os
+import json
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -10,7 +11,7 @@ CHANNEL_NAME = "فری ۱"
 
 CHANNEL_URL = "https://t.me/s/poshtehpardehtv"
 
-LAST_FILE = "last_message.txt"
+STATE_FILE = "last_messages.json"
 
 
 GMAIL_USER = os.environ.get("GMAIL_USER")
@@ -41,18 +42,20 @@ def get_messages():
         class_="tgme_widget_message"
     )
 
-
     result = []
 
-
     for item in messages:
+
+        data_id = item.get(
+            "data-post"
+        )
 
         text = item.find(
             "div",
             class_="tgme_widget_message_text"
         )
 
-        if text:
+        if data_id and text:
 
             message = text.get_text(
                 "\n",
@@ -60,26 +63,28 @@ def get_messages():
             )
 
             if message:
-                result.append(message)
+                result.append(
+                    {
+                        "id": data_id,
+                        "text": message
+                    }
+                )
+
+    return result
 
 
-    return result[-20:]
 
+def load_old():
 
-
-def read_old():
-
-    if os.path.exists(LAST_FILE):
+    if os.path.exists(STATE_FILE):
 
         with open(
-            LAST_FILE,
+            STATE_FILE,
             "r",
             encoding="utf-8"
         ) as file:
 
-            return file.read().split(
-                "\n---MESSAGE---\n"
-            )
+            return json.load(file)
 
     return []
 
@@ -88,13 +93,16 @@ def read_old():
 def save_old(messages):
 
     with open(
-        LAST_FILE,
+        STATE_FILE,
         "w",
         encoding="utf-8"
     ) as file:
 
-        file.write(
-            "\n---MESSAGE---\n".join(messages)
+        json.dump(
+            messages,
+            file,
+            ensure_ascii=False,
+            indent=2
         )
 
 
@@ -159,14 +167,22 @@ def send_email(message):
 
 new_messages = get_messages()
 
-old_messages = read_old()
+old_messages = load_old()
+
+
+old_ids = [
+    item["id"]
+    for item in old_messages
+]
 
 
 for message in new_messages:
 
-    if message not in old_messages:
+    if message["id"] not in old_ids:
 
-        send_email(message)
+        send_email(
+            message["text"]
+        )
 
         old_messages.append(
             message
@@ -174,7 +190,7 @@ for message in new_messages:
 
 
 save_old(
-    old_messages[-100:]
+    old_messages[-200:]
 )
 
 
