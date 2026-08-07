@@ -46,7 +46,7 @@ def get_messages():
 
     for item in messages:
 
-        data_id = item.get(
+        message_id = item.get(
             "data-post"
         )
 
@@ -55,18 +55,19 @@ def get_messages():
             class_="tgme_widget_message_text"
         )
 
-        if data_id and text:
+        if message_id and text:
 
-            message = text.get_text(
+            message_text = text.get_text(
                 "\n",
                 strip=True
             )
 
-            if message:
+            if message_text:
+
                 result.append(
                     {
-                        "id": data_id,
-                        "text": message
+                        "id": message_id,
+                        "text": message_text
                     }
                 )
 
@@ -74,7 +75,7 @@ def get_messages():
 
 
 
-def load_old():
+def load_state():
 
     if os.path.exists(STATE_FILE):
 
@@ -90,7 +91,7 @@ def load_old():
 
 
 
-def save_old(messages):
+def save_state(messages):
 
     with open(
         STATE_FILE,
@@ -107,7 +108,7 @@ def save_old(messages):
 
 
 
-def send_email(message):
+def send_email(messages):
 
     mail = MIMEMultipart()
 
@@ -116,7 +117,7 @@ def send_email(message):
     mail["To"] = GMAIL_TO
 
     mail["Subject"] = (
-        f"پیام جدید از {CHANNEL_NAME}"
+        f"{len(messages)} پیام جدید از {CHANNEL_NAME}"
     )
 
 
@@ -125,11 +126,30 @@ def send_email(message):
 {CHANNEL_NAME}
 
 
-پیام جدید:
+تعداد پیام‌های جدید:
+{len(messages)}
+
+
+====================
+
+"""
+
+
+    for index, message in enumerate(
+        messages,
+        start=1
+    ):
+
+        body += f"""
+
+پیام شماره {index}
 
 --------------------
 
 {message}
+
+====================
+
 """
 
 
@@ -167,20 +187,23 @@ def send_email(message):
 
 new_messages = get_messages()
 
-old_messages = load_old()
+old_messages = load_state()
 
 
-old_ids = [
+old_ids = {
     item["id"]
     for item in old_messages
-]
+}
+
+
+messages_to_send = []
 
 
 for message in new_messages:
 
     if message["id"] not in old_ids:
 
-        send_email(
+        messages_to_send.append(
             message["text"]
         )
 
@@ -189,8 +212,15 @@ for message in new_messages:
         )
 
 
-save_old(
-    old_messages[-200:]
+if messages_to_send:
+
+    send_email(
+        messages_to_send
+    )
+
+
+save_state(
+    old_messages[-500:]
 )
 
 
